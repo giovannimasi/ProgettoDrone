@@ -1,0 +1,5 @@
+../Core/Src/ESC.c:11:6:ESC_Calibrate	8	static
+../Core/Src/ESC.c:17:7:rangeDuty	16	static
+../Core/Src/ESC.c:27:6:setPWM	32	static
+../Core/Src/ESC.c:34:8:SpeedCompute	24	static
+../Core/Src/ESC.c:61:7:map	24	static

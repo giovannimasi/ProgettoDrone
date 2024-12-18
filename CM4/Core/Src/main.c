@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <ESC.h>
+#include <bno055.h>
+#include <PID.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -36,6 +38,8 @@
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
+
+#define CALIBRATE 0
 
 /* USER CODE END PD */
 
@@ -75,7 +79,13 @@ TIM_HandleTypeDef htim5;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-
+int flag_Tc=0;
+int mode=0;
+PID PitchPID;
+PID RollPID;
+double pitch;
+double roll;
+double yaw;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -141,6 +151,21 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_ALL);
+  HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);   // main channel
+  HAL_TIM_IC_Start(&htim5, TIM_CHANNEL_2);   // indirect channel
+
+#ifdef CALIBRATE
+  ESC_Calibrate();
+#endif
+
+  bno055_assignI2C(&hi2c1);
+  bno055_setup();
+  bno055_setOperationModeNDOF();
+  init_PID(&PitchPID, KPP, KIP, KDP, 0.01, 1.3, -1.3);
+  init_PID(&RollPID, KPR, KIR, KDR, 0.01, 1.3, -1.3);
+
 
   /* USER CODE END 2 */
 
@@ -151,6 +176,18 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  if(flag_Tc){
+		  switch(mode){
+		  case 0:
+			  printf("Motori fermi"); break;
+		  case 1:
+			  armingMotors(); break;
+		  case 2:
+			  stabilize(); break;
+		  default:
+			  break;
+		  }
+	  }
   }
   /* USER CODE END 3 */
 }
@@ -513,6 +550,73 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void armingMotors(){
+	setPWM(MIN_DUTY, MIN_DUTY, MIN_DUTY, MIN_DUTY);
+	printf("Motori armati");
+	HAL_Delay(5000);
+}
+
+void stabilize(){
+	float virtualInputs[4];
+	bno055_vector_t v = bno055_getVectorEuler();
+	  roll = v.y;
+	  if (v.z < 0){
+		  pitch = -v.z - 180;
+	  }
+	  else{
+		  pitch = -v.z + 180;
+	  }
+	  yaw=v.x;
+	  virtualInputs[0] = 15.6;
+	  virtualInputs[1] = PID_controller(&RollPID, roll, 0);
+	  virtualInputs[2] = PID_controller(&PitchPID, pitch, 0);
+	  virtualInputs[3] = 0;
+
+	  float* Speeds;
+	  Speeds = SpeedCompute(virtualInputs);
+
+	  float avgMotor1 = map(Speeds[0]) + 0.019;
+	  float avgMotor2 = map(Speeds[1]) + 0.0295;
+	  float avgMotor3 = map(Speeds[2]) - 0.019;
+	  float avgMotor4 = map(Speeds[3]) - 0.0295;
+
+	  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs);
+
+	  setPWM(avgMotor1, avgMotor2, avgMotor3, avgMotor4);
+
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim==&htim1){
+		flag_Tc=1;
+	}
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
+{
+	if(htim==&htim5){
+		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)  // If the interrupt is triggered by channel 1
+		{
+			// Read the IC value
+			uint32_t ICValue = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+
+			if (ICValue != 0)
+			{
+				// calculate the Duty Cycle
+				uint32_t duty_received = (HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2) *100)/ICValue;
+				if(duty_received >= 11){
+					mode = 0;
+				}
+				else if (duty_received <= 8){
+					mode = 2;
+				}
+				else {
+					mode = 1;
+				}
+			}
+		}
+	}
+}
 
 /* USER CODE END 4 */
 

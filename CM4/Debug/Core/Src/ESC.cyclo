@@ -1,0 +1,5 @@
+../Core/Src/ESC.c:11:6:ESC_Calibrate	1
+../Core/Src/ESC.c:17:7:rangeDuty	3
+../Core/Src/ESC.c:27:6:setPWM	1
+../Core/Src/ESC.c:34:8:SpeedCompute	1
+../Core/Src/ESC.c:61:7:map	3
