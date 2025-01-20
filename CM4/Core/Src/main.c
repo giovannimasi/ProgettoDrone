@@ -40,6 +40,7 @@
 #endif
 
 #define CALIBRATE 0
+#define DEFAULT 1
 
 /* USER CODE END PD */
 
@@ -86,17 +87,20 @@ PID RollPID;
 double pitch;
 double roll;
 double yaw;
+int n=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 static void MX_GPIO_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
-
+void stopMotors();
+void armingMotors();
+void stabilize();
+void readImu();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -145,21 +149,24 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART3_UART_Init();
   MX_TIM1_Init();
   MX_I2C1_Init();
   MX_TIM3_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
+  MX_USART3_UART_Init();
   HAL_TIM_Base_Start_IT(&htim1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_ALL);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);   // main channel
   HAL_TIM_IC_Start(&htim5, TIM_CHANNEL_2);   // indirect channel
 
 #ifdef CALIBRATE
   ESC_Calibrate();
 #endif
-
+#ifdef DEFAULT
   bno055_assignI2C(&hi2c1);
   bno055_setup();
   bno055_setOperationModeNDOF();
@@ -179,16 +186,17 @@ int main(void)
 	  if(flag_Tc){
 		  switch(mode){
 		  case 0:
-			  printf("Motori fermi"); break;
+			   stopMotors(); break;
 		  case 1:
 			  armingMotors(); break;
 		  case 2:
 			  stabilize(); break;
 		  default:
-			  break;
+			  stopMotors(); break;
 		  }
 	  }
   }
+#endif
   /* USER CODE END 3 */
 }
 
@@ -486,7 +494,7 @@ static void MX_TIM5_Init(void)
   * @param None
   * @retval None
   */
-static void MX_USART3_UART_Init(void)
+void MX_USART3_UART_Init(void)
 {
 
   /* USER CODE BEGIN USART3_Init 0 */
@@ -550,23 +558,40 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void stopMotors(){
+	TIM3->CCR1 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	TIM3->CCR2 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	TIM3->CCR3 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	TIM3->CCR4 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	readImu();
+	printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f \r\n", (double) OFF_DUTY, (double) OFF_DUTY,(double) OFF_DUTY, (double) OFF_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+
+}
+
 void armingMotors(){
 	setPWM(MIN_DUTY, MIN_DUTY, MIN_DUTY, MIN_DUTY);
-	printf("Motori armati");
-	HAL_Delay(5000);
+	readImu();
+	printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+
+}
+
+
+void readImu(){
+	bno055_vector_t v = bno055_getVectorEuler();
+		  pitch = v.y;
+		  if (v.z < 0){
+			  roll = -v.z - 180;
+		  }
+		  else{
+			  roll = -v.z + 180;
+		  }
+		  yaw=v.x;
+
 }
 
 void stabilize(){
 	float virtualInputs[4];
-	bno055_vector_t v = bno055_getVectorEuler();
-	  roll = v.y;
-	  if (v.z < 0){
-		  pitch = -v.z - 180;
-	  }
-	  else{
-		  pitch = -v.z + 180;
-	  }
-	  yaw=v.x;
+	readImu();
 	  virtualInputs[0] = 15.6;
 	  virtualInputs[1] = PID_controller(&RollPID, roll, 0);
 	  virtualInputs[2] = PID_controller(&PitchPID, pitch, 0);
@@ -575,12 +600,12 @@ void stabilize(){
 	  float* Speeds;
 	  Speeds = SpeedCompute(virtualInputs);
 
-	  float avgMotor1 = map(Speeds[0]) + 0.019;
-	  float avgMotor2 = map(Speeds[1]) + 0.0295;
-	  float avgMotor3 = map(Speeds[2]) - 0.019;
-	  float avgMotor4 = map(Speeds[3]) - 0.0295;
+	  float avgMotor1 = map(*(Speeds+0)) + 0.019;
+	  float avgMotor2 = map(*(Speeds+1)) + 0.0295;
+	  float avgMotor3 = map(*(Speeds+2)) - 0.019;
+	  float avgMotor4 = map(*(Speeds+3)) - 0.0295;
 
-	  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs);
+	  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs[0], virtualInputs[1], virtualInputs[2], virtualInputs[3]);
 
 	  setPWM(avgMotor1, avgMotor2, avgMotor3, avgMotor4);
 
@@ -588,7 +613,13 @@ void stabilize(){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim==&htim1){
-		flag_Tc=1;
+		if(n==1){
+			flag_Tc=1;
+			n=0;
+		}
+		else{
+			n++;
+		}
 	}
 }
 
@@ -616,6 +647,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 			}
 		}
 	}
+}
+
+
+int __io_putchar(int ch){
+	HAL_UART_Transmit(&huart3, (uint8_t*) &ch, 1, 0xffff);
+	return ch;
 }
 
 /* USER CODE END 4 */

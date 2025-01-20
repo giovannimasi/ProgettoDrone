@@ -9,9 +9,15 @@
 
 
 void ESC_Calibrate(){
-  setPWM(LIMIT_DUTY, LIMIT_DUTY, LIMIT_DUTY, LIMIT_DUTY);
-  HAL_Delay(3000);
-  setPWM(OFF_DUTY, OFF_DUTY, OFF_DUTY, OFF_DUTY);
+	TIM3->CCR1 = (uint32_t) (TIM3->ARR * LIMIT_DUTY / 100);
+	TIM3->CCR2 = (uint32_t) (TIM3->ARR * LIMIT_DUTY / 100);
+	TIM3->CCR3 = (uint32_t) (TIM3->ARR * LIMIT_DUTY / 100);
+	TIM3->CCR4 = (uint32_t) (TIM3->ARR * LIMIT_DUTY / 100);
+	HAL_Delay(3000);
+	TIM3->CCR1 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	TIM3->CCR2 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	TIM3->CCR3 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+	TIM3->CCR4 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
 }
 
 float rangeDuty(float duty){
