@@ -10,12 +10,12 @@
 
 #include <main.h>
 
-#define KPP 0.05
+#define KPP 0.04
 #define KIP 0
-#define KDP 0.04
-#define KPR 0.04
+#define KDP 0
+#define KPR 0
 #define KIR 0
-#define KDR 0.04
+#define KDR 0
 
 typedef struct PID{
     // TUNING PARAM (parallel form)

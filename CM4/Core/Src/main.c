@@ -88,6 +88,7 @@ double pitch;
 double roll;
 double yaw;
 int n=0;
+int flag_print=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -160,11 +161,15 @@ int main(void)
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+  TIM3->CCR1 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+  	TIM3->CCR2 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+  	TIM3->CCR3 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
+  	TIM3->CCR4 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
   HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);   // main channel
   HAL_TIM_IC_Start(&htim5, TIM_CHANNEL_2);   // indirect channel
 
 #ifdef CALIBRATE
-  ESC_Calibrate();
+//  ESC_Calibrate();
 #endif
 #ifdef DEFAULT
   bno055_assignI2C(&hi2c1);
@@ -564,15 +569,20 @@ void stopMotors(){
 	TIM3->CCR3 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
 	TIM3->CCR4 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
 	readImu();
-	printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f \r\n", (double) OFF_DUTY, (double) OFF_DUTY,(double) OFF_DUTY, (double) OFF_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+	if(flag_print){
+		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f \r\n", (double) OFF_DUTY, (double) OFF_DUTY,(double) OFF_DUTY, (double) OFF_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+		flag_print=0;
+	}
 
 }
 
 void armingMotors(){
 	setPWM(MIN_DUTY, MIN_DUTY, MIN_DUTY, MIN_DUTY);
 	readImu();
-	printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
-
+	if(flag_print) {
+		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+		flag_print=0;
+	}
 }
 
 
@@ -594,7 +604,7 @@ void stabilize(){
 	readImu();
 	  virtualInputs[0] = 15.6;
 	  virtualInputs[1] = PID_controller(&RollPID, roll, 0);
-	  virtualInputs[2] = PID_controller(&PitchPID, pitch, 0);
+	  virtualInputs[2] = PID_controller(&PitchPID, pitch, -180);
 	  virtualInputs[3] = 0;
 
 	  float* Speeds;
@@ -605,17 +615,21 @@ void stabilize(){
 	  float avgMotor3 = map(*(Speeds+2)) - 0.019;
 	  float avgMotor4 = map(*(Speeds+3)) - 0.0295;
 
-	  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs[0], virtualInputs[1], virtualInputs[2], virtualInputs[3]);
+	  if(flag_print) {
+		  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs[0], virtualInputs[1], virtualInputs[2], virtualInputs[3]);
+		  flag_print=0;
+	  }
 
 	  setPWM(avgMotor1, avgMotor2, avgMotor3, avgMotor4);
 
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	flag_Tc=1;
 	if(htim==&htim1){
-		if(n==1){
-			flag_Tc=1;
+		if(n==10){
 			n=0;
+			flag_print=1;
 		}
 		else{
 			n++;

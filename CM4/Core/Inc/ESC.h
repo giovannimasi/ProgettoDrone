@@ -15,10 +15,11 @@
 #define MIN_DUTY 5.4
 #define MAX_DUTY 6.5
 #define LIMIT_DUTY 10
-#define MAX_SPEED 11830
-#define MIN_SPEED 2000
+#define MAX_SPEED 800
+#define MIN_SPEED 366
 #define b 0.00001163
 #define d 0.00008
+#define l 0.3
 
 void ESC_Calibrate();
 float rangeDuty(float duty);
