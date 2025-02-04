@@ -610,6 +610,8 @@ void stabilize(){
 	  float* Speeds;
 	  Speeds = SpeedCompute(virtualInputs);
 
+	  //Sono stati messi degli offset nel tentativo di bilanciare se spinte dei due motori
+
 	  float avgMotor1 = map(*(Speeds+0)) + 0.04/*+ 0.019*/;
 	  float avgMotor2 = map(*(Speeds+1)) + 0.0295;
 	  float avgMotor3 = map(*(Speeds+2)) - 0.0295;
