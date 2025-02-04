@@ -42,10 +42,10 @@ float* SpeedCompute(float virtualInputs[])
     static float Speeds_quad[4];
     static float Speeds[4];
 
-    Speeds_quad[0] = (1/(4*b))*virtualInputs[0] 							   + (1/(2*l*b))*virtualInputs[2] - (1/(4*d))*virtualInputs[3];
-    Speeds_quad[1] = (1/(4*b))*virtualInputs[0] - (1/(2*l*b))*virtualInputs[1] 								  + (1/(4*d))*virtualInputs[3];
-    Speeds_quad[2] = (1/(4*b))*virtualInputs[0] 							   - (1/(2*l*b))*virtualInputs[2] - (1/(4*d))*virtualInputs[3];
-    Speeds_quad[3] = (1/(4*b))*virtualInputs[0] + (1/(2*l*b))*virtualInputs[1] 								  + (1/(4*d))*virtualInputs[3];
+    Speeds_quad[0] = (1/(4*b))*virtualInputs[0] 							   - (1/(2*l*b))*virtualInputs[2] + (1/(4*d))*virtualInputs[3];
+    Speeds_quad[1] = (1/(4*b))*virtualInputs[0] - (1/(2*l*b))*virtualInputs[1] 								  - (1/(4*d))*virtualInputs[3];
+    Speeds_quad[2] = (1/(4*b))*virtualInputs[0] 							   + (1/(2*l*b))*virtualInputs[2] + (1/(4*d))*virtualInputs[3];
+    Speeds_quad[3] = (1/(4*b))*virtualInputs[0] + (1/(2*l*b))*virtualInputs[1] 								  - (1/(4*d))*virtualInputs[3];
 
     /*
      * Calcoliamo le velocità dei motori al quadrato, poiché non possono essere negative.

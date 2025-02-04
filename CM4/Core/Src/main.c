@@ -169,7 +169,7 @@ int main(void)
   HAL_TIM_IC_Start(&htim5, TIM_CHANNEL_2);   // indirect channel
 
 #ifdef CALIBRATE
-//  ESC_Calibrate();
+  //ESC_Calibrate();
 #endif
 #ifdef DEFAULT
   bno055_assignI2C(&hi2c1);
@@ -588,12 +588,12 @@ void armingMotors(){
 
 void readImu(){
 	bno055_vector_t v = bno055_getVectorEuler();
-		  pitch = v.y;
+		  roll = v.y;
 		  if (v.z < 0){
-			  roll = -v.z - 180;
+			  pitch = -v.z - 180;
 		  }
 		  else{
-			  roll = -v.z + 180;
+			  pitch = -v.z + 180;
 		  }
 		  yaw=v.x;
 
@@ -602,17 +602,17 @@ void readImu(){
 void stabilize(){
 	float virtualInputs[4];
 	readImu();
-	  virtualInputs[0] = 15.6;
+	  virtualInputs[0] = 9;
 	  virtualInputs[1] = PID_controller(&RollPID, roll, 0);
-	  virtualInputs[2] = PID_controller(&PitchPID, pitch, -180);
+	  virtualInputs[2] = PID_controller(&PitchPID, pitch, 0);
 	  virtualInputs[3] = 0;
 
 	  float* Speeds;
 	  Speeds = SpeedCompute(virtualInputs);
 
-	  float avgMotor1 = map(*(Speeds+0)) + 0.019;
+	  float avgMotor1 = map(*(Speeds+0)) + 0.04/*+ 0.019*/;
 	  float avgMotor2 = map(*(Speeds+1)) + 0.0295;
-	  float avgMotor3 = map(*(Speeds+2)) - 0.019;
+	  float avgMotor3 = map(*(Speeds+2)) - 0.0295;
 	  float avgMotor4 = map(*(Speeds+3)) - 0.0295;
 
 	  if(flag_print) {

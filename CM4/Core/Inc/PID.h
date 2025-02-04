@@ -10,10 +10,10 @@
 
 #include <main.h>
 
-#define KPP 0.04
+#define KPP 0.0139
 #define KIP 0
 #define KDP 0
-#define KPR 0
+#define KPR 0.016
 #define KIR 0
 #define KDR 0
 
