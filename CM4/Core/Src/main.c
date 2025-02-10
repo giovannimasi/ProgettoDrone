@@ -39,9 +39,6 @@
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
 
-#define CALIBRATE 0
-#define DEFAULT 1
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -80,6 +77,22 @@ TIM_HandleTypeDef htim5;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+/*double KPP = 0.02;
+double KIP = 0.0002;
+double KDP = 0.05;
+double KPR = 0.02;
+double KIR = 0.0002;
+double KDR = 0.05;*/
+
+double KPP = 0.02;
+double KIP = 0.0003;
+double KDP = 0.08;
+double KPR = 0.02;
+double KIR = 0.0002;
+double KDR = 0.08;
+
+
+int calibrate = 0;
 int flag_Tc=0;
 int mode=0;
 PID PitchPID;
@@ -168,10 +181,9 @@ int main(void)
   HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);   // main channel
   HAL_TIM_IC_Start(&htim5, TIM_CHANNEL_2);   // indirect channel
 
-#ifdef CALIBRATE
-  //ESC_Calibrate();
-#endif
-#ifdef DEFAULT
+if (calibrate){
+  ESC_Calibrate();
+}else{
   bno055_assignI2C(&hi2c1);
   bno055_setup();
   bno055_setOperationModeNDOF();
@@ -201,7 +213,7 @@ int main(void)
 		  }
 	  }
   }
-#endif
+}
   /* USER CODE END 3 */
 }
 
@@ -570,7 +582,7 @@ void stopMotors(){
 	TIM3->CCR4 = (uint32_t) (TIM3->ARR * OFF_DUTY / 100);
 	readImu();
 	if(flag_print){
-		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f \r\n", (double) OFF_DUTY, (double) OFF_DUTY,(double) OFF_DUTY, (double) OFF_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f \r\n", (double) OFF_DUTY, (double) OFF_DUTY,(double) OFF_DUTY, (double) OFF_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0, (double) KPR, (double) KIR, (double) KDR, (double) KPP, (double) KIP, (double) KDP);
 		flag_print=0;
 	}
 
@@ -580,7 +592,7 @@ void armingMotors(){
 	setPWM(MIN_DUTY, MIN_DUTY, MIN_DUTY, MIN_DUTY);
 	readImu();
 	if(flag_print) {
-		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0);
+		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0, (double) KPR, (double) KIR, (double) KDR, (double) KPP, (double) KIP, (double) KDP);
 		flag_print=0;
 	}
 }
@@ -602,7 +614,7 @@ void readImu(){
 void stabilize(){
 	float virtualInputs[4];
 	readImu();
-	  virtualInputs[0] = 9;
+	  virtualInputs[0] = 11;
 	  virtualInputs[1] = PID_controller(&RollPID, roll, 0);
 	  virtualInputs[2] = PID_controller(&PitchPID, pitch, 0);
 	  virtualInputs[3] = 0;
@@ -612,13 +624,13 @@ void stabilize(){
 
 	  //Sono stati messi degli offset nel tentativo di bilanciare se spinte dei due motori
 
-	  float avgMotor1 = map(*(Speeds+0)) + 0.04/*+ 0.019*/;
-	  float avgMotor2 = map(*(Speeds+1)) + 0.0295;
-	  float avgMotor3 = map(*(Speeds+2)) - 0.0295;
-	  float avgMotor4 = map(*(Speeds+3)) - 0.0295;
+	  float avgMotor1 = map(*(Speeds+0)) /*+ 0.019*/;
+	  float avgMotor2 = map(*(Speeds+1)) /*+ 0.0295*/;
+	  float avgMotor3 = map(*(Speeds+2)) /*- 0.019*/;
+	  float avgMotor4 = map(*(Speeds+3)) /*- 0.0295*/;
 
 	  if(flag_print) {
-		  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs[0], virtualInputs[1], virtualInputs[2], virtualInputs[3]);
+		  printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", avgMotor1, avgMotor2, avgMotor3, avgMotor4, roll, pitch, virtualInputs[0], virtualInputs[1], virtualInputs[2], virtualInputs[3], (double) KPR, (double) KIR, (double) KDR, (double) KPP, (double) KIP, (double) KDP);
 		  flag_print=0;
 	  }
 
