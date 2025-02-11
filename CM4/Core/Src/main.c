@@ -77,19 +77,19 @@ TIM_HandleTypeDef htim5;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-/*double KPP = 0.02;
+double KPP = 0.016;
 double KIP = 0.0002;
-double KDP = 0.05;
-double KPR = 0.02;
-double KIR = 0.0002;
-double KDR = 0.05;*/
+double KDP = 0.06;
+double KPR = 0.016;
+double KIR = 0.0001;
+double KDR = 0.06;
 
-double KPP = 0.02;
-double KIP = 0.0003;
-double KDP = 0.08;
-double KPR = 0.02;
-double KIR = 0.0002;
-double KDR = 0.08;
+/*double KPP = 0.04;
+double KIP = 0.0000;
+double KDP = 0.05;
+double KPR = 0.04;
+double KIR = 0.0000;
+double KDR = 0.04;*/
 
 
 int calibrate = 0;
