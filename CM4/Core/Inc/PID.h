@@ -10,6 +10,20 @@
 
 #include <main.h>
 
+#define KPP 0.016
+#define KIP 0.0002
+#define KDP 0.06
+#define KPR 0.016
+#define KIR 0.0001
+#define KDR 0.06
+
+/*double KPP = 0.04;
+double KIP = 0.0000;
+double KDP = 0.05;
+double KPR = 0.04;
+double KIR = 0.0000;
+double KDR = 0.04;*/
+
 typedef struct PID{
     // TUNING PARAM (parallel form)
     float Kp;			// P gain
