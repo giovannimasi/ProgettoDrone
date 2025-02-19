@@ -593,7 +593,6 @@ void readImu(){
 			  pitch = -v.z + 180;
 		  }
 		  yaw=v.x;
-
 }
 
 void stabilize(){
