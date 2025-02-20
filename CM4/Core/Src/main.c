@@ -574,10 +574,10 @@ void stopMotors(){
 }
 
 void armingMotors(){
-	setPWM(MIN_DUTY, MIN_DUTY, MIN_DUTY, MIN_DUTY);
+	setPWM(ARMING_DUTY, ARMING_DUTY, ARMING_DUTY, ARMING_DUTY);
 	readImu();
 	if(flag_print) {
-		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) MIN_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0, (double) KPR, (double) KIR, (double) KDR, (double) KPP, (double) KIP, (double) KDP);
+		printf("%.2f, %.2f, %.2f, %.2f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n", (double) ARMING_DUTY, (double) ARMING_DUTY, (double) ARMING_DUTY, (double) ARMING_DUTY, (double) roll, (double) pitch, 0.0, 0.0, 0.0, 0.0, (double) KPR, (double) KIR, (double) KDR, (double) KPP, (double) KIP, (double) KDP);
 		flag_print=0;
 	}
 }
