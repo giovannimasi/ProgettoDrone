@@ -602,7 +602,6 @@ void stabilize(){
 	  virtualInputs[1] = PID_controller(&RollPID, roll, 0);
 	  virtualInputs[2] = PID_controller(&PitchPID, pitch, 0);
 	  virtualInputs[3] = 0;
-
 	  float* Speeds;
 	  Speeds = SpeedCompute(virtualInputs);
 
